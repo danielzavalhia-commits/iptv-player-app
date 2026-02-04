@@ -48,6 +48,11 @@ export interface Movie extends Channel {
   poster?: string;
   rating?: string;
   genre?: string;
+  synopsis?: string;
+  cast?: string[];
+  director?: string;
+  imdbRating?: number;
+  releaseDate?: string;
 }
 
 export interface Series extends Channel {
@@ -57,6 +62,12 @@ export interface Series extends Channel {
   description?: string;
   year?: string;
   genre?: string;
+  synopsis?: string;
+  cast?: string[];
+  creator?: string;
+  imdbRating?: number;
+  totalSeasons?: number;
+  status?: 'ongoing' | 'completed';
 }
 
 export interface Season {

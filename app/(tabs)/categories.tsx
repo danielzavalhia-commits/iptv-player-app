@@ -29,15 +29,26 @@ export default function CategoriesScreen() {
   }
 
   const handleContentPress = (item: Channel) => {
-    router.push({
-      pathname: '/player',
-      params: {
-        url: item.url,
-        title: item.name,
-        id: item.id,
-        type: item.type,
-      },
-    } as any);
+    // Ir para detalhes se for filme ou série, senão ir direto para player
+    if (item.type === 'movie' || item.type === 'series') {
+      router.push({
+        pathname: '/details',
+        params: {
+          id: item.id,
+          type: item.type,
+        },
+      } as any);
+    } else {
+      router.push({
+        pathname: '/player',
+        params: {
+          url: item.url,
+          title: item.name,
+          id: item.id,
+          type: item.type,
+        },
+      } as any);
+    }
   };
 
   const filterButtons: { key: CategoryFilter; label: string; emoji: string }[] = [

@@ -35,3 +35,10 @@
 - [ ] Modo escuro/claro (toggle funcional)
 - [x] Geração de logo personalizado
 - [x] Configuração de branding do app
+
+## Tela de Detalhes (Nova Funcionalidade)
+- [x] Estender tipos de dados com campos de sinopse, elenco e avaliações
+- [x] Criar tela de detalhes para filmes e séries
+- [x] Integrar navegação para tela de detalhes
+- [x] Adicionar funcionalidade de favoritos na tela de detalhes
+- [x] Testar tela de detalhes com dados de exemplo

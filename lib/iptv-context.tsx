@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IPTVConfig, Channel, Movie, Series, LiveChannel, ContentType } from '@/types';
+import { enrichChannelsWithMockData } from '@/lib/mock-data';
 
 interface IPTVContextType {
   config: IPTVConfig | null;
@@ -106,7 +107,10 @@ export function IPTVProvider({ children }: { children: ReactNode }) {
       }
 
       // Fazer download e parse da playlist
-      const parsedChannels = await parseM3U(playlistUrl);
+      let parsedChannels = await parseM3U(playlistUrl);
+      
+      // Enriquecer com dados de exemplo (sinopse, elenco, avaliações)
+      parsedChannels = enrichChannelsWithMockData(parsedChannels);
       
       // Salvar canais
       await AsyncStorage.setItem(IPTV_CHANNELS_KEY, JSON.stringify(parsedChannels));
