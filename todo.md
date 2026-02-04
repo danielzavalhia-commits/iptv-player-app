@@ -42,3 +42,10 @@
 - [x] Integrar navegação para tela de detalhes
 - [x] Adicionar funcionalidade de favoritos na tela de detalhes
 - [x] Testar tela de detalhes com dados de exemplo
+
+## Seletor de Qualidade de Vídeo (Nova Funcionalidade)
+- [x] Criar contexto para gerenciar preferência de qualidade
+- [x] Adicionar menu de qualidade no player
+- [x] Implementar lógica de seleção de qualidade
+- [x] Salvar preferência de qualidade no AsyncStorage
+- [x] Testar seletor de qualidade

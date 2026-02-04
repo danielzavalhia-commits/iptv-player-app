@@ -12,6 +12,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { IPTVProvider } from "@/lib/iptv-context";
 import { FavoritesProvider } from "@/lib/favorites-context";
 import { WatchHistoryProvider } from "@/lib/watch-history-context";
+import { QualityProvider } from "@/lib/quality-context";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -93,14 +94,16 @@ export default function RootLayout() {
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="setup" />
-            <Stack.Screen name="details" />
-            <Stack.Screen name="player" />
-            <Stack.Screen name="oauth/callback" />
-          </Stack>
+          <QualityProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="setup" />
+              <Stack.Screen name="details" />
+              <Stack.Screen name="player" />
+              <Stack.Screen name="oauth/callback" />
+            </Stack>
+          </QualityProvider>
           <StatusBar style="auto" />
                 </QueryClientProvider>
               </trpc.Provider>

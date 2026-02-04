@@ -7,6 +7,8 @@ import { useKeepAwake } from 'expo-keep-awake';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useColors } from '@/hooks/use-colors';
 import { useWatchHistory } from '@/lib/watch-history-context';
+import { useQuality, getQualityUrl } from '@/lib/quality-context';
+import { QualityMenu } from '@/components/quality-menu';
 import * as Haptics from 'expo-haptics';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
@@ -20,8 +22,14 @@ export default function PlayerScreen() {
   
   const [showControls, setShowControls] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  
+  const { quality } = useQuality();
+  
+  // Construir URL com qualidade selecionada
+  const qualityUrl = getQualityUrl(params.url, quality);
 
-  const player = useVideoPlayer(params.url, (player) => {
+  const player = useVideoPlayer(qualityUrl, (player) => {
     player.play();
   });
 
@@ -91,6 +99,13 @@ export default function PlayerScreen() {
     setShowControls(!showControls);
   };
 
+  const handleQualityPress = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+    setShowQualityMenu(true);
+  };
+
   return (
     <View style={styles.container}>
       {/* Player de Vídeo */}
@@ -117,22 +132,30 @@ export default function PlayerScreen() {
           </View>
         )}
 
-        {/* Controles */}
-        {showControls && (
-          <View style={styles.controlsOverlay}>
-            {/* Header */}
-            <View style={styles.header}>
-              <TouchableOpacity
-                onPress={handleBack}
-                style={styles.backButton}
-                activeOpacity={0.7}
-              >
-                <IconSymbol name="arrow.left" size={24} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text style={styles.title} numberOfLines={1}>
-                {params.title}
-              </Text>
-            </View>
+            {/* Controles */}
+            {showControls && (
+              <View style={styles.controlsOverlay}>
+                {/* Header */}
+                <View style={styles.header}>
+                  <TouchableOpacity
+                    onPress={handleBack}
+                    style={styles.backButton}
+                    activeOpacity={0.7}
+                  >
+                    <IconSymbol name="arrow.left" size={24} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <Text style={styles.title} numberOfLines={1}>
+                    {params.title}
+                  </Text>
+                  {/* Botão de Qualidade */}
+                  <TouchableOpacity
+                    onPress={handleQualityPress}
+                    style={styles.qualityButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.qualityButtonText}>{quality.toUpperCase()}</Text>
+                  </TouchableOpacity>
+                </View>
 
             {/* Play/Pause Central */}
             <View style={styles.centerControls}>
@@ -178,6 +201,9 @@ export default function PlayerScreen() {
           </View>
         )}
       </TouchableOpacity>
+
+      {/* Menu de Qualidade */}
+      <QualityMenu visible={showQualityMenu} onClose={() => setShowQualityMenu(false)} />
     </View>
   );
 }
@@ -244,6 +270,19 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
     fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  qualityButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  qualityButtonText: {
+    fontSize: 12,
     fontWeight: '600',
     color: '#FFFFFF',
   },
