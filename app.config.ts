@@ -32,7 +32,7 @@ const env = {
   appSlug: "iptv-player-app",
   // S3 URL of the app logo - set this to the URL returned by generate_image when creating custom logo
   // Leave empty to use the default icon from assets/images/icon.png
-  logoUrl: "",
+  logoUrl: "https://private-us-east-1.manuscdn.com/sessionFile/XWUvRaDJxOY3c4QessmfiQ/sandbox/VJKti21dbTFrsdAxDcDcZP-img-1_1770217290000_na1fn_aXB0di1wbGF5ZXItaWNvbg.png?x-oss-process=image/resize,w_1920,h_1920/format,webp/quality,q_80&Expires=1798761600&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9wcml2YXRlLXVzLWVhc3QtMS5tYW51c2Nkbi5jb20vc2Vzc2lvbkZpbGUvWFdVdlJhREp4T1kzYzRRZXNzbWZpUS9zYW5kYm94L1ZKS3RpMjFkYlRGcnNkQXhEY0RjWlAtaW1nLTFfMTc3MDIxNzI5MDAwMF9uYTFmbl9hWEIwZGkxd2JHRjVaWEl0YVdOdmJnLnBuZz94LW9zcy1wcm9jZXNzPWltYWdlL3Jlc2l6ZSx3XzE5MjAsaF8xOTIwL2Zvcm1hdCx3ZWJwL3F1YWxpdHkscV84MCIsIkNvbmRpdGlvbiI6eyJEYXRlTGVzc1RoYW4iOnsiQVdTOkVwb2NoVGltZSI6MTc5ODc2MTYwMH19fV19&Key-Pair-Id=K2HSFNDJXOU9YS&Signature=BCqNZtRIRdCHD2BEc205ukmmPB~eDouhODNy4ZTe36mIIIcFndM0qA-AMItfeRhxr0MOy-WIkIMADjC0O2WJLKezeaG5jXVxKgOTsdkQ-zoicNFhO0bOWzSsIt6JNSJgEgZ7He4uKLjbMd3Va-y6eZTl4Sm5MAmrz1lXOQ99pt5JuaUct4~MFfKxYgRFb8Dx835fO3gZaYZU-OSo4C~L5hIkEwpdUqhVtb1HFpqGgcnRJ1VdilRUwH~MnLOSiOCQGoBITu6xUrr8th5mhBsnM7O-l0Z7AmlwQMuUfDGLh6K0Vj7MgDDqxdnr5Te78vx5uv87al4g7YH9V1y5~xZB6A__",
   scheme: schemeFromBundleId,
   iosBundleId: bundleId,
   androidPackage: bundleId,
