@@ -88,45 +88,37 @@ export function IPTVProvider({ children }: { children: ReactNode }) {
 
   const loadPlaylist = async (overrideConfig?: IPTVConfig): Promise<boolean> => {
     const configToUse = overrideConfig || config;
-    
-    if (!configToUse) {
-      return false;
-    }
+    if (!configToUse) return false;
 
     try {
       setIsLoading(true);
-      
-      // Importar o parser M3U
-      const { parseM3U } = await import('@/lib/m3u-parser');
+      const { parseM3U } = await import('@/lib/m3u-parser'); // Importamos o parser atualizado
       
       let playlistUrl: string;
-      
       if (configToUse.mode === 'server') {
-        // Construir URL da playlist a partir das credenciais do servidor
         playlistUrl = `${configToUse.url}/get.php?username=${configToUse.username}&password=${configToUse.password}&type=m3u_plus&output=ts`;
       } else {
         playlistUrl = configToUse.url;
       }
       
-      // Se for override, salvar a configuração
-      if (overrideConfig) {
-        await saveConfig(overrideConfig);
-      }
+      if (overrideConfig) await saveConfig(overrideConfig);
 
-      // Fazer download e parse da playlist
+      // Aqui chamamos a nova lógica que lida com links HLS diretos
       let parsedChannels = await parseM3U(playlistUrl);
       
-      // Enriquecer com dados de exemplo (sinopse, elenco, avaliações)
-      parsedChannels = enrichChannelsWithMockData(parsedChannels);
-      
-      // Salvar canais
+      // Salva no telemóvel para não ter de carregar sempre
       await AsyncStorage.setItem(IPTV_CHANNELS_KEY, JSON.stringify(parsedChannels));
       setChannels(parsedChannels);
-      categorizeChannels(parsedChannels);
+      
+      // Organiza nas pastas (Filmes, Séries, Canais)
+      const liveList = parsedChannels.filter(c => c.type === 'live');
+      setLiveChannels(liveList as any);
+      setMovies(parsedChannels.filter(c => c.type === 'movie') as any);
+      setSeries(parsedChannels.filter(c => c.type === 'series') as any);
 
       return true;
     } catch (error) {
-      console.error('Erro ao carregar playlist:', error);
+      console.error('Erro:', error);
       return false;
     } finally {
       setIsLoading(false);
