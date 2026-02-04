@@ -29,17 +29,15 @@ export function IPTVProvider({ children }: { children: React.ReactNode }) {
 
   const init = async () => {
     try {
-      const savedConfig = await AsyncStorage.getItem('@iptv_config');
       const savedChannels = await AsyncStorage.getItem('@iptv_channels');
-      
-      if (savedConfig && savedChannels) {
+      if (savedChannels) {
         const parsed = JSON.parse(savedChannels);
         setChannels(parsed);
         organizeContent(parsed);
         setIsConfigured(true);
       }
     } catch (e) {
-      console.error('Erro ao iniciar IPTV:', e);
+      console.error('Erro no Contexto:', e);
     } finally {
       setIsLoading(false);
     }
@@ -55,23 +53,17 @@ export function IPTVProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     try {
       const { parseM3U } = await import('@/lib/m3u-parser');
-      
-      // Usa a config passada ou a salva
       const configToUse = newConfig || JSON.parse(await AsyncStorage.getItem('@iptv_config') || '{}');
-      
       if (!configToUse.url) return false;
 
-      let url = configToUse.url;
-      if (configToUse.mode === 'server') {
-        url = `${configToUse.url}/get.php?username=${configToUse.username}&password=${configToUse.password}&type=m3u_plus&output=ts`;
-      }
-
+      // Monta a URL padrão de servidores Xtream
+      const url = `${configToUse.url}/get.php?username=${configToUse.username}&password=${configToUse.password}&type=m3u_plus&output=ts`;
+      
       const parsed = await parseM3U(url);
       
       if (parsed.length > 0) {
-        if (newConfig) await AsyncStorage.setItem('@iptv_config', JSON.stringify(newConfig));
+        await AsyncStorage.setItem('@iptv_config', JSON.stringify(configToUse));
         await AsyncStorage.setItem('@iptv_channels', JSON.stringify(parsed));
-        
         setChannels(parsed);
         organizeContent(parsed);
         setIsConfigured(true);
@@ -88,9 +80,6 @@ export function IPTVProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await AsyncStorage.clear();
     setChannels([]);
-    setLiveChannels([]);
-    setMovies([]);
-    setSeries([]);
     setIsConfigured(false);
   };
 
