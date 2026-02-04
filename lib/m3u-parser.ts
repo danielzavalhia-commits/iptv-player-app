@@ -1,70 +1,81 @@
-import { Channel, LiveChannel, ContentType } from '@/types';
+import { Channel, ContentType } from '@/types';
 
-// Esta função agora aceita a URL original para caso o link seja direto
 export async function parseM3U(url: string): Promise<Channel[]> {
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`Erro na rede: ${response.status}`);
     const text = await response.text();
     
-    // Tentamos ler como lista, mas se falhar, usamos a URL como canal direto
+    if (!text || text.length < 10) {
+      throw new Error('O servidor retornou uma lista vazia.');
+    }
+
     return parseM3UContent(text, url);
   } catch (error) {
-    // Se for um link direto que não permite leitura de texto, criamos o canal direto
-    return [{
-      id: 'manual_link',
-      name: 'Canal Adicionado Manualmente',
-      url: url,
-      category: 'Links Diretos',
-      type: 'live',
-    }];
+    console.error('Erro ao processar M3U:', error);
+    // Fallback: Se for um link direto de vídeo, cria um canal único
+    if (url.includes('.m3u8') || url.includes('.ts') || url.includes('.mp4')) {
+      return [{
+        id: 'direct_link',
+        name: 'Canal Direto / HLS',
+        url: url,
+        category: 'Manual',
+        type: 'live'
+      }];
+    }
+    return [];
   }
 }
 
 export function parseM3UContent(content: string, url?: string): Channel[] {
-  const lines = content.split('\n').map(line => line.trim()).filter(line => line);
-  const entries: any[] = [];
+  const lines = content.split(/\r?\n/).map(l => l.trim()).filter(l => l);
+  const entries: Channel[] = [];
   
-  // REGRA PARA LEIGO: Se o link não tiver a marcação de lista (#EXTINF), 
-  // tratamos como um link de vídeo direto
+  // Se não tem a tag #EXTM3U, mas temos uma URL, tratamos como link direto
   if (!content.includes('#EXTINF') && url) {
-    return [{
-      id: 'direct_hls',
-      name: 'Link Direto (HLS/MP4)',
-      url: url,
-      category: 'Manual',
-      type: 'live',
-    }];
+    return [{ id: 'direct', name: 'Link Direto', url, category: 'Manual', type: 'live' }];
   }
 
-  let currentEntry: any = {};
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  let currentInfo: any = null;
+
+  for (const line of lines) {
     if (line.startsWith('#EXTINF:')) {
+      // Extrai nome, logo e grupo usando Regex para maior precisão
       const nameMatch = line.match(/,(.+)$/);
-      if (nameMatch) {
-        currentEntry.name = nameMatch[1].trim();
-        const logoMatch = line.match(/tvg-logo="([^"]+)"/);
-        if (logoMatch) currentEntry.logo = logoMatch[1];
-        const groupMatch = line.match(/group-title="([^"]+)"/);
-        if (groupMatch) currentEntry.category = groupMatch[1];
+      const logoMatch = line.match(/tvg-logo="([^"]+)"/);
+      const groupMatch = line.match(/group-title="([^"]+)"/);
+      
+      currentInfo = {
+        name: nameMatch ? nameMatch[1].trim() : 'Canal sem nome',
+        logo: logoMatch ? logoMatch[1] : undefined,
+        category: groupMatch ? groupMatch[1] : 'Geral'
+      };
+    } else if (line.startsWith('http') && currentInfo) {
+      const title = currentInfo.name.toLowerCase();
+      let type: ContentType = 'live';
+      
+      // Inteligência para separar Filmes e Séries automaticamente
+      if (title.includes('filme') || title.includes('movie') || currentInfo.category.toLowerCase().includes('vod')) {
+        type = 'movie';
+      } else if (title.includes('série') || title.includes('s0') || title.includes('e0')) {
+        type = 'series';
       }
-    } else if (!line.startsWith('#') && currentEntry.name) {
-      currentEntry.url = line;
+
       entries.push({
         id: `ch_${entries.length}`,
-        name: currentEntry.name,
-        url: currentEntry.url,
-        logo: currentEntry.logo,
-        category: currentEntry.category || 'Geral',
-        type: 'live' // Por padrão, tratamos como TV ao vivo
+        name: currentInfo.name,
+        url: line,
+        logo: currentInfo.logo,
+        category: currentInfo.category,
+        type: type
       });
-      currentEntry = {};
+      currentInfo = null;
     }
   }
   return entries;
 }
 
-// Mantemos esta para não quebrar a busca
 export function searchChannels(channels: Channel[], query: string): Channel[] {
-  return channels.filter(ch => ch.name.toLowerCase().includes(query.toLowerCase()));
+  const q = query.toLowerCase();
+  return channels.filter(ch => ch.name.toLowerCase().includes(q));
 }
