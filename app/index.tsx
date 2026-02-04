@@ -1,35 +1,25 @@
 import { useEffect } from 'react';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { View, ActivityIndicator } from 'react-native';
-import { useAuth } from '@/lib/auth-context';
 import { useIPTV } from '@/lib/iptv-context';
-import { useColors } from '@/hooks/use-colors';
 
 export default function Index() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { isConfigured, isLoading: iptvLoading } = useIPTV();
+  const { isConfigured, isLoading } = useIPTV();
   const router = useRouter();
-  const segments = useSegments();
-  const colors = useColors();
 
   useEffect(() => {
-    if (authLoading || iptvLoading) {
-      return;
+    if (!isLoading) {
+      if (isConfigured) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/login');
+      }
     }
-
-    // Redirecionar baseado no estado de autenticação e configuração
-    if (!isAuthenticated) {
-      router.replace('/login');
-    } else if (!isConfigured) {
-      router.replace('/setup');
-    } else {
-      router.replace('/(tabs)');
-    }
-  }, [isAuthenticated, isConfigured, authLoading, iptvLoading]);
+  }, [isConfigured, isLoading]);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-      <ActivityIndicator size="large" color={colors.primary} />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000' }}>
+      <ActivityIndicator size="large" color="#007AFF" />
     </View>
   );
 }
