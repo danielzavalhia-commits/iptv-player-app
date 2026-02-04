@@ -12,7 +12,7 @@ interface IPTVContextType {
   series: Series[];
   liveChannels: LiveChannel[];
   saveConfig: (config: IPTVConfig) => Promise<void>;
-  loadPlaylist: () => Promise<boolean>;
+  loadPlaylist: (overrideConfig?: IPTVConfig) => Promise<boolean>;
   clearConfig: () => Promise<void>;
 }
 
@@ -86,8 +86,10 @@ export function IPTVProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const loadPlaylist = async (): Promise<boolean> => {
-    if (!config) {
+  const loadPlaylist = async (overrideConfig?: IPTVConfig): Promise<boolean> => {
+    const configToUse = overrideConfig || config;
+    
+    if (!configToUse) {
       return false;
     }
 
@@ -99,11 +101,16 @@ export function IPTVProvider({ children }: { children: ReactNode }) {
       
       let playlistUrl: string;
       
-      if (config.mode === 'server') {
+      if (configToUse.mode === 'server') {
         // Construir URL da playlist a partir das credenciais do servidor
-        playlistUrl = `${config.url}/get.php?username=${config.username}&password=${config.password}&type=m3u_plus&output=ts`;
+        playlistUrl = `${configToUse.url}/get.php?username=${configToUse.username}&password=${configToUse.password}&type=m3u_plus&output=ts`;
       } else {
-        playlistUrl = config.url;
+        playlistUrl = configToUse.url;
+      }
+      
+      // Se for override, salvar a configuração
+      if (overrideConfig) {
+        await saveConfig(overrideConfig);
       }
 
       // Fazer download e parse da playlist

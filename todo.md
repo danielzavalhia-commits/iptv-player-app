@@ -49,3 +49,9 @@
 - [x] Implementar lógica de seleção de qualidade
 - [x] Salvar preferência de qualidade no AsyncStorage
 - [x] Testar seletor de qualidade
+
+## Integração com Painel de Cliente (Nova Funcionalidade)
+- [x] Modificar tela de login para 3 modos (Servidor, M3U, HLS)
+- [x] Implementar validação de credenciais com painel
+- [x] Testar com dados reais do painel
+- [x] Melhorar UX da tela de login
