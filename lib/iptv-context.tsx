@@ -1,167 +1,108 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IPTVConfig, Channel, Movie, Series, LiveChannel, ContentType } from '@/types';
-import { enrichChannelsWithMockData } from '@/lib/mock-data';
+import { Channel, LiveChannel, Movie, Series, IPTVConfig } from '@/types';
 
 interface IPTVContextType {
-  config: IPTVConfig | null;
-  isConfigured: boolean;
-  isLoading: boolean;
   channels: Channel[];
+  liveChannels: LiveChannel[];
   movies: Movie[];
   series: Series[];
-  liveChannels: LiveChannel[];
-  saveConfig: (config: IPTVConfig) => Promise<void>;
-  loadPlaylist: (overrideConfig?: IPTVConfig) => Promise<boolean>;
-  clearConfig: () => Promise<void>;
+  isLoading: boolean;
+  isConfigured: boolean;
+  loadPlaylist: (config?: IPTVConfig) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const IPTVContext = createContext<IPTVContextType | undefined>(undefined);
 
-const IPTV_CONFIG_KEY = '@iptv_player:config';
-const IPTV_CHANNELS_KEY = '@iptv_player:channels';
-
-export function IPTVProvider({ children }: { children: ReactNode }) {
-  const [config, setConfig] = useState<IPTVConfig | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function IPTVProvider({ children }: { children: React.ReactNode }) {
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [liveChannels, setLiveChannels] = useState<LiveChannel[]>([]);
   const [movies, setMovies] = useState<Movie[]>([]);
   const [series, setSeries] = useState<Series[]>([]);
-  const [liveChannels, setLiveChannels] = useState<LiveChannel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isConfigured, setIsConfigured] = useState(false);
 
   useEffect(() => {
-    loadStoredConfig();
+    init();
   }, []);
 
-  const loadStoredConfig = async () => {
+  const init = async () => {
     try {
-      const [storedConfig, storedChannels] = await Promise.all([
-        AsyncStorage.getItem(IPTV_CONFIG_KEY),
-        AsyncStorage.getItem(IPTV_CHANNELS_KEY),
-      ]);
-
-      if (storedConfig) {
-        setConfig(JSON.parse(storedConfig));
+      const savedConfig = await AsyncStorage.getItem('@iptv_config');
+      const savedChannels = await AsyncStorage.getItem('@iptv_channels');
+      
+      if (savedConfig && savedChannels) {
+        const parsed = JSON.parse(savedChannels);
+        setChannels(parsed);
+        organizeContent(parsed);
+        setIsConfigured(true);
       }
-
-      if (storedChannels) {
-        const parsedChannels = JSON.parse(storedChannels) as Channel[];
-        setChannels(parsedChannels);
-        categorizeChannels(parsedChannels);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar configuração IPTV:', error);
+    } catch (e) {
+      console.error('Erro ao iniciar IPTV:', e);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const categorizeChannels = (allChannels: Channel[]) => {
-    const moviesList: Movie[] = [];
-    const seriesList: Series[] = [];
-    const liveList: LiveChannel[] = [];
-
-    allChannels.forEach((channel) => {
-      if (channel.type === 'movie') {
-        moviesList.push(channel as Movie);
-      } else if (channel.type === 'series') {
-        seriesList.push(channel as Series);
-      } else if (channel.type === 'live') {
-        liveList.push(channel as LiveChannel);
-      }
-    });
-
-    setMovies(moviesList);
-    setSeries(seriesList);
-    setLiveChannels(liveList);
+  const organizeContent = (allChannels: Channel[]) => {
+    setLiveChannels(allChannels.filter(c => c.type === 'live') as any);
+    setMovies(allChannels.filter(c => c.type === 'movie') as any);
+    setSeries(allChannels.filter(c => c.type === 'series') as any);
   };
 
-  const saveConfig = async (newConfig: IPTVConfig) => {
+  const loadPlaylist = async (newConfig?: IPTVConfig): Promise<boolean> => {
+    setIsLoading(true);
     try {
-      await AsyncStorage.setItem(IPTV_CONFIG_KEY, JSON.stringify(newConfig));
-      setConfig(newConfig);
-    } catch (error) {
-      console.error('Erro ao salvar configuração IPTV:', error);
-      throw error;
-    }
-  };
-
-  const loadPlaylist = async (overrideConfig?: IPTVConfig): Promise<boolean> => {
-    const configToUse = overrideConfig || config;
-    if (!configToUse) return false;
-
-    try {
-      setIsLoading(true);
-      const { parseM3U } = await import('@/lib/m3u-parser'); // Importamos o parser atualizado
+      const { parseM3U } = await import('@/lib/m3u-parser');
       
-      let playlistUrl: string;
+      // Usa a config passada ou a salva
+      const configToUse = newConfig || JSON.parse(await AsyncStorage.getItem('@iptv_config') || '{}');
+      
+      if (!configToUse.url) return false;
+
+      let url = configToUse.url;
       if (configToUse.mode === 'server') {
-        playlistUrl = `${configToUse.url}/get.php?username=${configToUse.username}&password=${configToUse.password}&type=m3u_plus&output=ts`;
-      } else {
-        playlistUrl = configToUse.url;
+        url = `${configToUse.url}/get.php?username=${configToUse.username}&password=${configToUse.password}&type=m3u_plus&output=ts`;
       }
-      
-      if (overrideConfig) await saveConfig(overrideConfig);
 
-      // Aqui chamamos a nova lógica que lida com links HLS diretos
-      let parsedChannels = await parseM3U(playlistUrl);
+      const parsed = await parseM3U(url);
       
-      // Salva no telemóvel para não ter de carregar sempre
-      await AsyncStorage.setItem(IPTV_CHANNELS_KEY, JSON.stringify(parsedChannels));
-      setChannels(parsedChannels);
-      
-      // Organiza nas pastas (Filmes, Séries, Canais)
-      const liveList = parsedChannels.filter(c => c.type === 'live');
-      setLiveChannels(liveList as any);
-      setMovies(parsedChannels.filter(c => c.type === 'movie') as any);
-      setSeries(parsedChannels.filter(c => c.type === 'series') as any);
-
-      return true;
-    } catch (error) {
-      console.error('Erro:', error);
+      if (parsed.length > 0) {
+        if (newConfig) await AsyncStorage.setItem('@iptv_config', JSON.stringify(newConfig));
+        await AsyncStorage.setItem('@iptv_channels', JSON.stringify(parsed));
+        
+        setChannels(parsed);
+        organizeContent(parsed);
+        setIsConfigured(true);
+        return true;
+      }
+      return false;
+    } catch (e) {
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const clearConfig = async () => {
-    try {
-      await AsyncStorage.multiRemove([IPTV_CONFIG_KEY, IPTV_CHANNELS_KEY]);
-      setConfig(null);
-      setChannels([]);
-      setMovies([]);
-      setSeries([]);
-      setLiveChannels([]);
-    } catch (error) {
-      console.error('Erro ao limpar configuração:', error);
-    }
+  const logout = async () => {
+    await AsyncStorage.clear();
+    setChannels([]);
+    setLiveChannels([]);
+    setMovies([]);
+    setSeries([]);
+    setIsConfigured(false);
   };
 
   return (
-    <IPTVContext.Provider
-      value={{
-        config,
-        isConfigured: !!config && channels.length > 0,
-        isLoading,
-        channels,
-        movies,
-        series,
-        liveChannels,
-        saveConfig,
-        loadPlaylist,
-        clearConfig,
-      }}
-    >
+    <IPTVContext.Provider value={{ channels, liveChannels, movies, series, isLoading, isConfigured, loadPlaylist, logout }}>
       {children}
     </IPTVContext.Provider>
   );
 }
 
-export function useIPTV() {
+export const useIPTV = () => {
   const context = useContext(IPTVContext);
-  if (context === undefined) {
-    throw new Error('useIPTV deve ser usado dentro de um IPTVProvider');
-  }
+  if (!context) throw new Error('useIPTV deve ser usado dentro de um IPTVProvider');
   return context;
-}
+};
